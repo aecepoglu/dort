@@ -1,0 +1,16 @@
+shape: sequence_diagram
+
+player1.shape: Person
+player2.shape: Person
+
+player1.1 -> server: "find opponent"
+player2.1 -> server.1: "find opponent"
+server.1 -> player1.1: "match123 w/ player2"
+server.1 -> player2.1: "match123 w/ player1"
+player1.1 -> server: "accept"
+player2.1 -> server.game: "accept"
+server.game -> player1: initial game state
+server.game -> player2: initial game state
+player1 -> server.game.1: make "repopulate Q1" move
+server.game.1 -> player1: state
+server.game.1 -> player2: state
