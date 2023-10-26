@@ -1,10 +1,10 @@
 defmodule Board do
   @areas [:nw, :ne, :se, :sw]
   @players [:white, :black]
-  defstruct [nw: :empty,
-             ne: :empty,
-             se: :empty,
-             sw: :empty]
+  defstruct [nw: {:white, 4},
+             ne: {:black, 4},
+             se: {:black, 2},
+             sw: {:white, 2}]
 
   def repopulate(%__MODULE__{}=board, area, player)
   when area in @areas
@@ -14,8 +14,8 @@ defmodule Board do
 
   def attack(%__MODULE__{}=board, from, to)
   when from in @areas and to in @areas do
-    f = board[from]
-    t = board[to]
+    f = Map.fetch!(board, from)
+    t = Map.fetch!(board, to)
     %{board | from => :empty, to => attack_area(f, t)}
   end
 
@@ -55,7 +55,7 @@ defmodule Board do
     end
   end
 
-  def string(%__MODULE__{}=x) do
+  def pretty_string(%__MODULE__{}=x) do
     [x.nw, x.ne, x.sw, x.se]
     |> Enum.map(&string_area/1)
     |> Enum.chunk_every(2)
@@ -64,6 +64,15 @@ defmodule Board do
     |> Enum.flat_map(& &1)
     |> Enum.join("\n")
   end
+
+  def serialize(%__MODULE__{}=x) do
+    [x.nw, x.ne, x.sw, x.se]
+    |> Enum.map(&serialize_area/1)
+    |> Enum.join(" ")
+  end
+  defp serialize_area(:empty),      do: "0"
+  defp serialize_area({:white, x}), do: "#{x}W"
+  defp serialize_area({:black, x}), do: "#{x}B"
 
   defp string_area(:empty),      do: string_num(0, " ")
   defp string_area({:white, n}), do: string_num(n, "O")

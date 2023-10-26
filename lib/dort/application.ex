@@ -9,6 +9,10 @@ defmodule Dort.Application do
   def start(_type, _args) do
     children = [
       {Task.Supervisor, name: TCPServer.TaskSupervisor},
+      {Registry, keys: :duplicate, name: Dispatcher.Registry},
+      GameServer,
+      Matchmaking,
+      Connections,
       Supervisor.child_spec(
         {Task, fn -> TCPServer.accept(4000) end}, restart: :permanent
       )
