@@ -41,6 +41,10 @@ defmodule Connection do
   end
 
   defp process({:ok, {:i_am, player_id}}, :unidentified, _sock) do
+    case Fight.find(player_id) |> IO.inspect do
+      [] -> "nothing"
+      [_] -> "one found"
+    end
     {:ok, Message.make(:welcome), {:identified, player_id}}
   end
   defp process({:ok, _}, :unidentified, _sock) do
