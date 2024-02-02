@@ -1,16 +1,46 @@
+e2e flow via Dispatcher: {
 shape: sequence_diagram
 
-player1.shape: Person
-player2.shape: Person
+p1.shape: Person
+p2.shape: Person
+TCPServer
+Dispatcher
+GameServer
+Matchmaking
+Fight
 
-player1.1 -> server: "find opponent"
-player2.1 -> server.1: "find opponent"
-server.1 -> player1.1: "match123 w/ player2"
-server.1 -> player2.1: "match123 w/ player1"
-player1.1 -> server: "accept"
-player2.1 -> server.game: "accept"
-server.game -> player1: initial game state
-server.game -> player2: initial game state
-player1 -> server.game.1: make "repopulate Q1" move
-server.game.1 -> player1: state
-server.game.1 -> player2: state
+connection: {
+	p1 -> TCPServer: connect
+}
+
+identification: {
+	p1 -> TCPServer: authenticate 
+	TCPServer -> GameServer.regp1: register "p1"
+	GameServer.regp1 -> Dispatcher: sub "p1"
+}
+
+joining matchmaking queue: {
+	p1 -> TCPServer: matchmake
+	TCPServer -> Dispatcher: dispatch "matchmake"\nto "p1"
+	Dispatcher -> GameServer: "'matchmake'\nfrom p1"
+	GameServer -> Matchmaking: enqueue p1
+	Matchmaking -> GameServer: returns "enqueued"
+}
+
+finding a matchup: {
+	p2 -> TCPServer: matchmake
+	TCPServer -> Dispatcher: dispatch "matchmake"\nto "p2"
+	Dispatcher -> GameServer.2: "'matchmake' from p2"
+	GameServer.2 -> Matchmaking: enqueue p2
+	Matchmaking -> GameServer.2: returns "found matchup\np1, p2"
+	GameServer.2 -> Dispatcher: unsub\n\["p1", "p2"\]
+	GameServer.2 -> Fight: "create(p1, p2)"
+	Fight -> Dispatcher: "sub [p1, p2]"
+	GameServer.2 -> p1: found opponent p2
+	GameServer.2 -> p2: found opponent p1
+}
+
+someone makes a move: {
+	p1 -> TCPServer -> Dispatcher -> Fight -> p2: a move
+}
+}

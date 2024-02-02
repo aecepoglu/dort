@@ -47,7 +47,7 @@ defmodule Fight do
   end
 
   def handle_info({:disconnect, player_id},
-                  {_, _board, _counter, {id1, _}=p1, {id2, _}=p2}=state) do
+                  {_, _board, _counter, {id1, _}, {id2, _}}=state) do
     :ok = Registry.unregister(Dispatcher.Registry, id1)
     :ok = Registry.unregister(Dispatcher.Registry, id2)
     {_, {other_id, sock}} = assc(state, player_id)
@@ -72,7 +72,7 @@ defmodule Fight do
   end
   defp do_da_move({:on, board, counter, p1, p2}, {:attack, a1, a2}, player, color) do
     Logger.info("#{player}[#{color}] attacks from #{a1} to #{a2}")
-    {:on, Board.attack(board, a1, a2), counter, p1, p2}
+    {:on, Board.attack(board, a1, a2, color), counter, p1, p2}
   end
 
   defp gameover_maybe({:on, board, counter, p1, p2}=state) do

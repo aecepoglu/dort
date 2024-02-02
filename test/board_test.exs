@@ -1,6 +1,70 @@
 defmodule BoardTest do
   use ExUnit.Case
 
+  test "repopulatiing empty area does nothing" do
+    assert %Board{nw: :empty, ne: :empty, sw: :empty, se: :empty}
+           |> Board.repopulate(:nw, :black)
+           == %Board{nw: :empty, ne: :empty, sw: :empty, se: :empty}
+  end
+
+  test "black repopulates black" do
+    assert %Board{nw: {:black, 2}, ne: :empty, sw: :empty, se: :empty}
+           |> Board.repopulate(:nw, :black)
+           == %Board{nw: {:black, 4}, ne: :empty, sw: :empty, se: :empty}
+  end
+
+  test "black cannot repopulate white's area" do
+    b = %Board{nw: {:black, 2}, ne: {:white, 2}, sw: :empty, se: :empty}
+    assert Board.repopulate(b, :ne, :black) == b
+  end
+
+  test "black aids from black to white area" do
+    b = %Board{nw: {:black, 2}, ne: {:white, 2}, sw: :empty, se: :empty}
+    assert Board.aid(b, :nw, :ne, :black) == b
+  end
+
+  test "black aids from white to white area" do
+    b = %Board{nw: {:black, 2}, ne: {:white, 2}, sw: :empty, se: {:white, 3}}
+    assert Board.aid(b, :se, :ne, :black) == b
+  end
+
+  test "black aids from black to black area" do
+    b = %Board{nw: {:black, 6}, ne: {:white, 2}, sw: {:black, 1}, se: :empty} 
+    assert Board.aid(b, :nw, :sw, :black)
+           == %{b | :nw => {:black, 4}, :sw => {:black, 3}}
+  end
+  #TODO property tests to ensure target area can never be more than 6
+
+  test "black attacks white and wins" do
+    b = %Board{nw: {:black, 6}, ne: {:white, 3}, sw: {:black, 1}, se: :empty} 
+    assert Board.attack(b, :nw, :ne, :black)
+           == %{b | nw: {:black, 1}, ne: {:black, 2}}
+  end
+
+  test "black attacks white and loses" do
+    b = %Board{nw: {:black, 6}, ne: {:white, 1}, sw: {:black, 1}, se: :empty} 
+    assert Board.attack(b, :nw, :ne, :black)
+           == %{b | nw: :empty, ne: {:white, 1}}
+  end
+
+  test "cannot attack with other player's tiles" do
+    b = %Board{nw: {:black, 6}, ne: {:white, 1}, sw: :empty, se: {:white, 3}} 
+    assert Board.attack(b, :se, :ne, :black)
+           == b
+  end
+  
+  test "cannot aid from empty to populated area" do
+    b = %Board{nw: {:black, 5}, ne: {:white, 2}, sw: :empty, se: :empty}
+    assert Board.aid(b, :sw, :nw, :black)
+           == b
+  end
+
+  test "cannot aid from populated to empty area" do
+    b = %Board{nw: {:black, 5}, ne: {:white, 2}, sw: :empty, se: :empty}
+    assert Board.aid(b, :nw, :se, :black)
+           == b
+  end
+  
   test "game is not over" do
     x = %Board{nw: {:black, 4}, ne: :empty, sw: {:white, 1}, se: :empty}
     |> Board.fin?
