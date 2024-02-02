@@ -40,12 +40,17 @@ defmodule Connection do
     {:ok, Message.make(:pong), state}
   end
 
-  defp process({:ok, {:i_am, player_id}}, :unidentified, _sock) do
-    case Fight.find(player_id) |> IO.inspect do
-      [] -> "nothing"
-      [_] -> "one found"
+  defp process({:ok, {:i_am, player_id}}, :unidentified, socket) do
+    reply = case Fight.find(player_id) do
+      [] -> Message.make(:welcome)
+      [{pid, _}] ->
+        Connections.register(player_id, socket)
+        
+        Fight.reconnect(pid, player_id, socket)
+        |> Enum.map(&Message.make/1)
+        |> Enum.join("\r\n")
     end
-    {:ok, Message.make(:welcome), {:identified, player_id}}
+    {:ok, reply, {:identified, player_id}}
   end
   defp process({:ok, _}, :unidentified, _sock) do
     {:ok, Message.make(:unidentified), :unidentified}

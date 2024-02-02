@@ -16,6 +16,17 @@ defmodule Fight do
     Registry.lookup(Dispatcher.Registry, player_id)
   end
 
+  def reconnect(pid, player_id, socket) do
+    GenServer.call(pid, {:reconnect, player_id, socket})
+  end
+
+  @impl true
+  def handle_call({:reconnect, p_id, sock}, _from, %Fight{state: :dc}=state) do
+    {_, {other_id, _}=other} = assc(state, p_id)
+    reply = [{:matchmade, other_id, :white}, {:state, state.board, state.tick}]
+    {:reply, reply, %{state | p1: other, p2: {p_id, sock}}}
+  end
+
   @impl true
   def init({player1_id, player2_id}) do
     {:ok, ^player1_id, sock1} = Connections.fetch_with_player(player1_id)
@@ -26,7 +37,7 @@ defmodule Fight do
     {:matchmade, player2_id, :white} |> Message.make() |> Connection.say(sock1)
     {:matchmade, player1_id, :black} |> Message.make() |> Connection.say(sock2)
 
-    board_str = {:state, state.board, 0} |> Message.make()
+    board_str = {:state, state.board, state.tick} |> Message.make()
     board_str |> Connection.say(sock1)
     board_str |> Connection.say(sock2)
 
@@ -38,6 +49,7 @@ defmodule Fight do
   end
 
   @impl true
+  def handle_info(_, %Fight{state: :dc}=state), do: state
   def handle_info({{:move, move}, player}, %Fight{p1: p1, p2: p2}=state) do
     color = get_color(p1, p2, player)
 
@@ -54,12 +66,9 @@ defmodule Fight do
   end
 
   def handle_info({:disconnect, player_id}, %Fight{p1: {id1, _}, p2: {id2, _}}=state) do
-    :ok = Registry.unregister(Dispatcher.Registry, id1)
-    :ok = Registry.unregister(Dispatcher.Registry, id2)
     {_, {other_id, sock}} = assc(state, player_id)
     :abandoned |> Message.make |> Connection.say(sock)
-    Matchmaking.enqueue(other_id)
-    {:stop, :abandoned, nil}
+    {:noreply, %{state | state: :dc}}
   end
 
   def handle_info({{:bubble, _}=msg, player_id}, state) do
@@ -127,8 +136,8 @@ defmodule Fight do
   
   defp assc(%Fight{p1: {id1, s1}=p1, p2: {id2, s2}=p2}, id) do
     cond do
-      id1 == id -> {{p1, s1}, {p2, s2}}
-      id2 == id -> {{p2, s2}, {p1, s1}}
+      id1 == id -> {p1, p2}
+      id2 == id -> {p2, p1}
     end
   end
 end

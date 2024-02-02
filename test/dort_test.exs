@@ -33,7 +33,7 @@ defmodule FlowTest do
     assert Connections.fetch_with_player("aecepoglu") == :error
   end
 
-  test "matches are terminated when a player quits", %{socket1: sock1,
+  test "matches don't die when a player quits", %{socket1: sock1,
                                                        socket2: sock2} do
     start_a_match("aecepoglu", sock1, "tanshaydar", sock2)
 
@@ -41,7 +41,7 @@ defmodule FlowTest do
     Process.sleep(100)
 
     assert Client.recv(sock2) == :abandoned
-    assert Fight.find("aecepoglu") == []
+    assert Fight.find("aecepoglu") != []
   end
 
   test "abandoned player maintains their connection", %{socket1: sock1,
@@ -117,7 +117,6 @@ defmodule FlowTest do
     assert Client.recv(s1) == {:bubble, :rematch}
   end
 
-  @tag :skip
   test "players can reconnect to matches", %{socket1: s1, socket2: s2} do
     start_a_match("aecepoglu", s1, "tanshaydar", s2)
 
