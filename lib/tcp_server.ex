@@ -56,12 +56,13 @@ defmodule Connection do
     {:ok, Message.make(:unidentified), :unidentified}
   end
 
-  defp process({:ok, :matchmake}, {:identified, player_id}=state, socket) do
-    Connections.register(player_id, socket)
-    reply = case Matchmaking.enqueue(player_id) do
+  defp process({:ok, {:matchmake, region}}, {:identified, id}=state, socket) do
+    Connections.register(id, socket)
+    reply = case Matchmaking.enqueue(id, region) do
       {:enqueued, _}=x -> Message.make(x)
       {:found, _, _} -> :noreply
     end
+    IO.inspect(reply)
     {:ok, reply, state}
   end
 

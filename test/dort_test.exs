@@ -34,7 +34,7 @@ defmodule FlowTest do
   end
 
   test "matches don't die when a player quits", %{socket1: sock1,
-                                                       socket2: sock2} do
+                                                  socket2: sock2} do
     start_a_match("aecepoglu", sock1, "tanshaydar", sock2)
 
     :gen_tcp.close(sock1)
@@ -102,6 +102,25 @@ defmodule FlowTest do
            == {[], []}
 
     matchmake("aecepoglu", sock1, "tanshaydar", sock2)
+  end
+
+  test "players are matched by their regions", %{socket1: s1, socket2: s2} do
+    s3 = Client.connect('localhost', 4001)
+    on_exit(:disconnect, fn -> Client.close(s3) end)
+    {p1, p2, p3} = {"one", "two", "three"}
+    
+    assert Client.identify(p1, s1) == :welcome
+    assert Client.join_matchmaking(s1, :earth) == :enqueued
+    
+    assert Client.identify(p2, s2) == :welcome
+    assert Client.join_matchmaking(s2, :mars) == :enqueued
+    
+    assert Client.identijfy(p3, s3) == :welcome
+    assert Client.join_matchmaking(s3, :earth) == {:matchmade, p1, :white}
+    assert Client.recv(s1) == {:matchmade, p3, :black}
+
+    assert Client.recv(s2, 100) == {:error, :timeout}
+    Client.close(s2)
   end
 
   test "players can talk to each other", %{socket1: s1, socket2: s2} do

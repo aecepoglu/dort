@@ -10,8 +10,8 @@ defmodule Client do
     |> ask(sock)
   end
 
-  def join_matchmaking(sock) do
-    :join_matchmaking
+  def join_matchmaking(sock, region \\ :earth) do
+    {:join_matchmaking, region}
     |> Message.make()
     |> ask(sock)
   end

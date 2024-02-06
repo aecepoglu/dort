@@ -18,7 +18,7 @@ defmodule Message do
   def make({:enqueued, _id}), do: "enqueued"
   def make(:welcome), do: "welcome"
   def make({:identify, name}), do: "i am #{name}"
-  def make(:join_matchmaking), do: "matchmake"
+  def make({:join_matchmaking, region}), do: "matchmake #{region_to_str(region)}"
   def make({:matchmade, name, color}), do: "found #{name} . ready #{color_to_str(color)}"
   def make({:move, {:attack, from, to}}), do: "move attack #{from} #{to}"
   def make({:move, {:repopulate, area}}), do: "move repopulate #{area}"
@@ -33,7 +33,8 @@ defmodule Message do
   def parse("who are you?"), do: {:ok, :unidentified}
   def parse("you cannot do that"), do: {:ok, :mismatch}
   def parse("i am " <> player_id), do: {:ok, {:i_am, player_id}}
-  def parse("matchmake"), do: {:ok, :matchmake}
+  def parse("matchmake " <> region), do: {:ok, {:matchmake,
+                                                String.to_existing_atom(region)}}
   def parse("welcome"), do: {:ok, :welcome}
   def parse("enqueued"), do: {:ok, :enqueued}
   def parse("move repopulate " <> area) do
@@ -115,4 +116,7 @@ defmodule Message do
 
   defp color_to_str(:white), do: "W"
   defp color_to_str(:black), do: "B"
+
+  defp region_to_str(:earth), do: "earth"
+  defp region_to_str(:mars), do: "mars"
 end
