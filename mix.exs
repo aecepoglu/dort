@@ -19,5 +19,7 @@ defmodule Dort.MixProject do
     ]
   end
 
-  defp deps, do: []
+  defp deps do
+    []
+  end
 end
